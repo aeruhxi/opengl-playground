@@ -18,7 +18,7 @@ pub fn create_shader(shader_type: GLenum) -> Shader {
 }
 
 impl Shader {
-    pub fn source(&self, source: &str) {
+    pub fn source(self, source: &str) {
         unsafe {
             let c_source = CString::new(source).expect("Only string without 0 byte is accepted");
 
@@ -26,7 +26,7 @@ impl Shader {
         }
     }
 
-    pub fn compile(&self) {
+    pub fn compile(self) {
         unsafe { gl::CompileShader(self.0) }
     }
 
@@ -38,25 +38,26 @@ impl Shader {
         }
     }
 
-    pub fn get_info_log(&self) -> String {
-        unsafe {
-            const CAPACITY: usize = 512;
-            let mut info_log: Vec<u8> = Vec::with_capacity(CAPACITY);
-            let info_log_size: usize = 0;
+    pub fn get_info_log(self) -> String {
+        const CAPACITY: usize = 512;
+        let mut info_log: Vec<u8> = Vec::with_capacity(CAPACITY);
+        let mut info_log_size: i32 = 0;
 
+        unsafe {
             gl::GetShaderInfoLog(
                 self.0,
                 CAPACITY as i32,
-                info_log_size as *mut i32,
-                info_log.as_mut_ptr() as *mut GLchar,
+                &mut info_log_size,
+                info_log.as_mut_ptr().cast(),
             );
 
-            info_log.set_len(info_log_size);
-            String::from_utf8(info_log).unwrap()
+            info_log.set_len(info_log_size.try_into().unwrap());
         }
+
+        String::from_utf8(info_log).unwrap()
     }
 
-    pub fn delete(&self) {
+    pub fn delete(self) {
         unsafe {
             gl::DeleteShader(self.0);
         }
@@ -83,7 +84,7 @@ impl Program {
         }
     }
 
-    pub fn get(self, pname: GLenum) -> bool {
+    pub fn get_iv(self, pname: GLenum) -> bool {
         unsafe {
             let mut success = gl::FALSE as GLint;
             gl::GetProgramiv(self.0, pname, &mut success);
@@ -92,21 +93,21 @@ impl Program {
     }
 
     pub fn get_info_log(self) -> String {
-        unsafe {
-            const CAPACITY: usize = 512;
-            let mut info_log: Vec<u8> = Vec::with_capacity(CAPACITY);
-            let info_log_size: usize = 0;
+        const CAPACITY: usize = 512;
+        let mut info_log: Vec<u8> = Vec::with_capacity(CAPACITY);
+        let mut info_log_size: i32 = 0;
 
+        unsafe {
             gl::GetProgramInfoLog(
                 self.0,
                 CAPACITY as i32,
-                info_log_size as *mut i32,
-                info_log.as_mut_ptr() as *mut GLchar,
+                &mut info_log_size,
+                info_log.as_mut_ptr().cast(),
             );
-
-            info_log.set_len(info_log_size);
-            String::from_utf8(info_log).unwrap()
+            info_log.set_len(info_log_size.try_into().unwrap());
         }
+
+        String::from_utf8(info_log).unwrap()
     }
 
     pub fn use_(self: Program) {
@@ -154,13 +155,13 @@ pub fn buffer_data<T>(target: GLenum, data: &[T], usage: GLenum) {
         gl::BufferData(
             target,
             (data.len() * size_of::<T>()) as isize,
-            &data[0] as *const T as *const c_void,
+            data.as_ptr().cast(),
             usage,
         );
     }
 }
 
-pub fn vertex_attrib_pointer(index: u32, size: i32, type_: GLenum, normalized: bool, stride: usize, offset: usize) {
+pub fn vertex_attrib_pointer(index: u32, size: i32, type_: GLenum, normalized: bool, stride: usize, pointer: usize) {
     let gl_normalized = if normalized { gl::TRUE } else { gl::FALSE };
     unsafe {
         gl::VertexAttribPointer(
@@ -169,7 +170,7 @@ pub fn vertex_attrib_pointer(index: u32, size: i32, type_: GLenum, normalized: b
             type_,
             gl_normalized,
             stride as i32,
-            offset as *const c_void,
+            pointer as *const c_void,
         );
     }
 }
@@ -194,4 +195,12 @@ pub fn clear(mask: GLenum) {
 
 pub fn draw_arrays(mode: GLenum, first: i32, count: usize) {
     unsafe { gl::DrawArrays(mode, first, count as i32) }
+}
+
+pub fn draw_elements(mode: GLenum, count: usize, type_: GLenum, indices: usize) {
+    unsafe { gl::DrawElements(mode, count as i32, type_, indices as *const c_void) }
+}
+
+pub fn polygon_mode(face: GLenum, mode: GLenum) {
+    unsafe { gl::PolygonMode(face, mode) }
 }

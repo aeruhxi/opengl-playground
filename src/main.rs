@@ -43,8 +43,7 @@ fn main() {
     vertex_shader.source(VERTEX_SHADER_SOURCE);
     vertex_shader.compile();
 
-    let success = vertex_shader.get(gl::COMPILE_STATUS);
-    if !success {
+    if !vertex_shader.get(gl::COMPILE_STATUS) {
         let info_log = vertex_shader.get_info_log();
         println!("Error during compilation\n{}", info_log);
     }
@@ -54,12 +53,18 @@ fn main() {
     fragment_shader.source(FRAGMENT_SHADER_SOURCE);
     fragment_shader.compile();
 
+    if !fragment_shader.get(gl::COMPILE_STATUS) {
+        let info_log = fragment_shader.get_info_log();
+        println!("Error during compilation\n{}", info_log);
+    }
+
+    // Program
     let shader_program = create_program();
     shader_program.attach_shader(vertex_shader);
     shader_program.attach_shader(fragment_shader);
     shader_program.link();
 
-    let success = shader_program.get(gl::LINK_STATUS);
+    let success = shader_program.get_iv(gl::LINK_STATUS);
     if !success {
         let info_log = shader_program.get_info_log();
         println!("Error during linking\n{}", info_log);
@@ -97,16 +102,25 @@ fn main() {
 
 const VERTEX_SHADER_SOURCE: &str = r#"
     #version 330 core
+
     layout (location = 0) in vec3 aPos;
+
+    out vec4 vertexColor;
+
     void main() {
-       gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+       gl_Position = vec4(aPos, 1.0);
+       vertexColor = vec4(0.5, 0.0, 0.0, 1.0);
     }
 "#;
 
 const FRAGMENT_SHADER_SOURCE: &str = r#"
     #version 330 core
+
     out vec4 FragColor;
+
+    in vec4 vertexColor;
+
     void main() {
-       FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+       FragColor = vertexColor;
     }
 "#;
