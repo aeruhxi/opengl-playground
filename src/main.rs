@@ -16,6 +16,11 @@ fn main() {
     glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
     glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
 
+    #[cfg(target_os = "macos")]
+    {
+        glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
+    }
+
     let (mut window, _events) = glfw
         .create_window(800, 600, "Hello, world!", glfw::WindowMode::Windowed)
         .expect("Failed to create GLFW window.");
