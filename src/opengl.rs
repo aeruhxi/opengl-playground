@@ -5,7 +5,7 @@ use std::{
     str,
 };
 
-use gl::types::{GLchar, GLenum, GLint};
+use gl::types::{GLboolean, GLenum, GLint};
 
 #[derive(Clone, Copy)]
 pub struct Shader(u32);
@@ -20,7 +20,7 @@ pub fn create_shader(shader_type: GLenum) -> Shader {
 impl Shader {
     pub fn source(self, source: &str) {
         unsafe {
-            let c_source = CString::new(source).expect("Only string without 0 byte is accepted");
+            let c_source = CString::new(source).unwrap();
 
             gl::ShaderSource(self.0, 1, &c_source.as_ptr(), null());
         }
@@ -84,7 +84,7 @@ impl Program {
         }
     }
 
-    pub fn get_iv(self, pname: GLenum) -> bool {
+    pub fn get(self, pname: GLenum) -> bool {
         unsafe {
             let mut success = gl::FALSE as GLint;
             gl::GetProgramiv(self.0, pname, &mut success);
@@ -110,9 +110,54 @@ impl Program {
         String::from_utf8(info_log).unwrap()
     }
 
-    pub fn use_(self: Program) {
+    pub fn use_(self) {
         unsafe {
             gl::UseProgram(self.0);
+        }
+    }
+
+    pub fn get_uniform_location(self, name: &str) -> Uniform {
+        let name = CString::new(name).unwrap();
+        unsafe { Uniform(gl::GetUniformLocation(self.0, name.as_ptr())) }
+    }
+}
+
+pub struct Uniform(i32);
+
+impl Uniform {
+    pub fn set4f(self, f1: f32, f2: f32, f3: f32, f4: f32) {
+        unsafe {
+            gl::Uniform4f(self.0, f1, f2, f3, f4);
+        }
+    }
+
+    pub fn set1f(self, f: f32) {
+        unsafe {
+            gl::Uniform1f(self.0, f);
+        }
+    }
+
+    pub fn set2f(self, f1: f32, f2: f32) {
+        unsafe {
+            gl::Uniform2f(self.0, f1, f2);
+        }
+    }
+
+    pub fn set3f(self, f1: f32, f2: f32, f3: f32) {
+        unsafe {
+            gl::Uniform3f(self.0, f1, f2, f3);
+        }
+    }
+
+    pub fn set1i(self, i: i32) {
+        unsafe {
+            gl::Uniform1i(self.0, i);
+        }
+    }
+
+    pub fn set_matrix4fv(self, count: i32, transpose: bool, matrix: &[f32]) {
+        unsafe {
+            gl::UniformMatrix4fv(self.0, count, bool_to_glbool(transpose), matrix.as_ptr());
         }
     }
 }
@@ -203,4 +248,11 @@ pub fn draw_elements(mode: GLenum, count: usize, type_: GLenum, indices: usize) 
 
 pub fn polygon_mode(face: GLenum, mode: GLenum) {
     unsafe { gl::PolygonMode(face, mode) }
+}
+
+fn bool_to_glbool(b: bool) -> GLboolean {
+    match b {
+        true => gl::TRUE,
+        false => gl::FALSE,
+    }
 }
