@@ -7,8 +7,8 @@ mod renderer;
 
 use glfw::Context;
 use opengl::{
-    bind_buffer, buffer_data, clear, clear_color, create_program, create_shader, draw_arrays,
-    enable_vertex_attrib_array, gen_buffers, gen_vertex_arrays, vertex_attrib_pointer,
+    bind_buffer, buffer_data, clear, clear_color, draw_arrays, enable_vertex_attrib_array, gen_buffers,
+    gen_vertex_arrays, vertex_attrib_pointer,
 };
 use renderer::loader::Loader;
 
@@ -74,28 +74,3 @@ fn main() {
         glfw.poll_events();
     }
 }
-
-const VERTEX_SHADER_SOURCE: &str = r#"
-    #version 330 core
-
-    layout (location = 0) in vec3 aPos;
-    layout (location = 1) in vec3 aColor;
-
-    out vec3 vertexColor;
-
-    void main() {
-       gl_Position = vec4(aPos, 1.0);
-       vertexColor = aColor;
-    }
-"#;
-
-const FRAGMENT_SHADER_SOURCE: &str = r#"
-    #version 330 core
-
-    out vec4 FragColor;
-    in vec3 vertexColor;
-
-    void main() {
-       FragColor = vec4(vertexColor, 1.0);
-    }
-"#;

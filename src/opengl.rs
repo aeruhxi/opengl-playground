@@ -125,37 +125,37 @@ impl Program {
 pub struct Uniform(i32);
 
 impl Uniform {
-    pub fn set4f(self, f1: f32, f2: f32, f3: f32, f4: f32) {
+    pub fn set_4f(self, f1: f32, f2: f32, f3: f32, f4: f32) {
         unsafe {
             gl::Uniform4f(self.0, f1, f2, f3, f4);
         }
     }
 
-    pub fn set1f(self, f: f32) {
+    pub fn set_1f(self, f: f32) {
         unsafe {
             gl::Uniform1f(self.0, f);
         }
     }
 
-    pub fn set2f(self, f1: f32, f2: f32) {
+    pub fn set_2f(self, f1: f32, f2: f32) {
         unsafe {
             gl::Uniform2f(self.0, f1, f2);
         }
     }
 
-    pub fn set3f(self, f1: f32, f2: f32, f3: f32) {
+    pub fn set_3f(self, f1: f32, f2: f32, f3: f32) {
         unsafe {
             gl::Uniform3f(self.0, f1, f2, f3);
         }
     }
 
-    pub fn set1i(self, i: i32) {
+    pub fn set_1i(self, i: i32) {
         unsafe {
             gl::Uniform1i(self.0, i);
         }
     }
 
-    pub fn set_matrix4fv(self, count: i32, transpose: bool, matrix: &[f32]) {
+    pub fn set_matrix_4fv(self, count: i32, transpose: bool, matrix: &[f32]) {
         unsafe {
             gl::UniformMatrix4fv(self.0, count, bool_to_glbool(transpose), matrix.as_ptr());
         }
@@ -254,5 +254,61 @@ fn bool_to_glbool(b: bool) -> GLboolean {
     match b {
         true => gl::TRUE,
         false => gl::FALSE,
+    }
+}
+
+// Texture
+#[derive(Clone, Copy)]
+pub struct Texture(u32);
+
+pub fn gen_textures<const N: usize>() -> [Texture; N] {
+    let mut texture_ids: [u32; N] = [0; N];
+    unsafe {
+        gl::GenTextures(N as i32, texture_ids.as_mut_ptr());
+    }
+    texture_ids.map(|id| Texture(id))
+}
+
+impl Texture {
+    pub fn bind(self, target: GLenum) {
+        unsafe {
+            gl::BindTexture(target, self.0);
+        }
+    }
+
+    pub fn unbind(target: GLenum) {
+        unsafe { gl::BindTexture(target, 0) }
+    }
+}
+
+pub fn tex_image_2d(
+    target: GLenum,
+    level: GLenum,
+    internal_format: GLenum,
+    width: i32,
+    height: i32,
+    border: GLenum,
+    format: GLenum,
+    type_: GLenum,
+    data: &[u8],
+) {
+    unsafe {
+        gl::TexImage2D(
+            target,
+            level as i32,
+            internal_format as i32,
+            width,
+            height,
+            border as i32,
+            format,
+            type_,
+            data.as_ptr().cast(),
+        );
+    }
+}
+
+pub fn tex_parameter_i(target: GLenum, pname: GLenum, param: GLenum) {
+    unsafe {
+        gl::TexParameteri(target, pname, param as i32);
     }
 }

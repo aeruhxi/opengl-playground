@@ -1,12 +1,12 @@
 use std::{
-    collections::{
-        hash_map::{self, Entry},
-        HashMap,
-    },
-    fs,
+    collections::{hash_map::Entry, HashMap},
+    fs::{self, File},
+    path::Path,
 };
 
-use super::material::{create_material, Material};
+use stb_image::image::{self, LoadResult};
+
+use super::{material::Material, texture2d::Texture2D};
 
 pub struct Loader {
     materials: HashMap<&'static str, Material>,
@@ -33,7 +33,7 @@ impl Loader {
                 let vertex_source = read_file(vertex_shader_file_path);
                 let fragment_source = read_file(fragment_shader_file_path);
 
-                let material = create_material(&vertex_source, &fragment_source);
+                let material = Material::new(&vertex_source, &fragment_source);
 
                 entry.insert(material)
             }
@@ -44,6 +44,19 @@ impl Loader {
         self.materials
             .get(name)
             .expect(&format!("Material not found: {}", name))
+    }
+
+    pub fn load_texture(image_file_path: &Path, alpha: bool) -> Texture2D {
+        let format = if alpha { gl::RGBA } else { gl::RGB };
+
+        let texture_2d = Texture2D::new(format, format, gl::REPEAT, gl::REPEAT, gl::LINEAR, gl::LINEAR);
+
+        if let LoadResult::ImageU8(image) = image::load(image_file_path) {
+            texture_2d.generate(image.width as i32, image.height as i32, image.data);
+            return texture_2d;
+        } else {
+            panic!("Error reading image file")
+        }
     }
 }
 
