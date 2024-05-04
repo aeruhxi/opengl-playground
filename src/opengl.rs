@@ -64,7 +64,7 @@ impl Shader {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Program(u32);
 
 pub fn create_program() -> Program {
@@ -155,7 +155,7 @@ impl Uniform {
         }
     }
 
-    pub fn set_matrix_4fv(self, count: i32, transpose: bool, matrix: &[f32]) {
+    pub fn set_matrix4fv(self, count: i32, transpose: bool, matrix: &[f32]) {
         unsafe {
             gl::UniformMatrix4fv(self.0, count, bool_to_glbool(transpose), matrix.as_ptr());
         }
@@ -174,8 +174,14 @@ pub fn gen_buffers<const N: usize>() -> [Buffer; N] {
     buffer_ids.map(|id| Buffer(id))
 }
 
-pub fn bind_buffer(target: GLenum, buffer: Buffer) {
-    unsafe { gl::BindBuffer(target, buffer.0) }
+impl Buffer {
+    pub fn bind(self, target: GLenum) {
+        unsafe { gl::BindBuffer(target, self.0) }
+    }
+
+    pub fn unbind(target: GLenum) {
+        unsafe { gl::BindBuffer(target, 0) }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -258,7 +264,7 @@ fn bool_to_glbool(b: bool) -> GLboolean {
 }
 
 // Texture
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Texture(u32);
 
 pub fn gen_textures<const N: usize>() -> [Texture; N] {
@@ -310,5 +316,23 @@ pub fn tex_image_2d(
 pub fn tex_parameter_i(target: GLenum, pname: GLenum, param: GLenum) {
     unsafe {
         gl::TexParameteri(target, pname, param as i32);
+    }
+}
+
+pub fn active_texture(texture: GLenum) {
+    unsafe {
+        gl::ActiveTexture(texture);
+    }
+}
+
+pub fn blend_func(s_factor: GLenum, d_factor: GLenum) {
+    unsafe {
+        gl::BlendFunc(s_factor, d_factor);
+    }
+}
+
+pub fn enable(cap: GLenum) {
+    unsafe {
+        gl::Enable(cap);
     }
 }

@@ -2,6 +2,9 @@ use glam::{Mat4, Vec2, Vec3A, Vec4};
 
 use crate::opengl::{create_program, create_shader, Program};
 
+// Not deriving Copy for allowing heap allocated
+// data in the future
+#[derive(Debug, Clone)]
 pub struct Material {
     program: Program,
 }
@@ -68,9 +71,9 @@ impl Material {
             .set_4f(value.x, value.y, value.z, value.w);
     }
 
-    pub fn set_matrix4fv(&self, name: &str, value: Mat4) {
+    pub fn set_matrix4f(&self, name: &str, value: Mat4) {
         self.program
             .get_uniform_location(name)
-            .set_matrix_4fv(1, false, &value.to_cols_array());
+            .set_matrix4fv(1, false, &value.to_cols_array());
     }
 }

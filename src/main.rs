@@ -1,16 +1,14 @@
 extern crate gl;
 extern crate glfw;
-use std::mem::size_of;
 
+mod game;
 mod opengl;
-mod renderer;
 
-use glfw::Context;
-use opengl::{
-    bind_buffer, buffer_data, clear, clear_color, draw_arrays, enable_vertex_attrib_array, gen_buffers,
-    gen_vertex_arrays, vertex_attrib_pointer,
-};
-use renderer::loader::Loader;
+use std::{cell::RefCell, rc::Rc};
+
+use game::{loader::Loader, Game};
+use glfw::{Action, Context, Key, Window};
+use opengl::{clear, clear_color};
 
 fn main() {
     let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
@@ -37,40 +35,46 @@ fn main() {
         unsafe { gl::Viewport(0, 0, width, height) };
     });
 
-    #[rustfmt::skip]
-    let vertices: [f32; 18] = [
-         0.5, -0.5, 0.0,        1.0, 0.0, 0.0,
-        -0.5, -0.5, 0.0,        0.0, 1.0, 0.0,
-         0.0,  0.5, 0.0,        0.0, 0.0, 1.0,
-    ];
-
-    // Program
     let mut loader = Loader::new();
-    let material = loader.load_material("triangle", "src/shaders/vert.glsl", "src/shaders/frag.glsl");
+    let game: Rc<RefCell<Game>> = Rc::new(RefCell::new(Game::new(800, 600, &mut loader)));
 
-    // buffers
-    let [vbo] = gen_buffers::<1>();
-    let [vao] = gen_vertex_arrays::<1>();
+    {
+        let game = Rc::clone(&game);
+        window.set_key_callback(move |window, key, _scan_code, action, _mods| handle_key(&game, window, key, action));
+    }
 
-    vao.bind();
-    bind_buffer(gl::ARRAY_BUFFER, vbo);
-    buffer_data(gl::ARRAY_BUFFER, &vertices, gl::STATIC_DRAW);
-
-    vertex_attrib_pointer(0, 3, gl::FLOAT, false, 6 * size_of::<f32>(), 0);
-    enable_vertex_attrib_array(0);
-
-    vertex_attrib_pointer(1, 3, gl::FLOAT, false, 6 * size_of::<f32>(), 3 * size_of::<f32>());
-    enable_vertex_attrib_array(1);
+    let mut delta_time: f32;
+    let mut last_frame: f32 = 0.0;
 
     while !window.should_close() {
-        clear_color(0.2, 0.3, 0.3, 1.0);
-        clear(gl::COLOR_BUFFER_BIT);
+        let current_frame = glfw.get_time() as f32;
+        delta_time = current_frame - last_frame;
+        last_frame = current_frame;
+        glfw.poll_events();
 
-        material.use_();
-        vao.bind();
-        draw_arrays(gl::TRIANGLES, 0, 3);
+        game.borrow_mut().process_input(delta_time);
+
+        game.borrow_mut().update(delta_time);
+
+        clear_color(0.0, 0.0, 0.0, 1.0);
+        clear(gl::COLOR_BUFFER_BIT);
+        game.borrow().render(&mut loader);
 
         window.swap_buffers();
-        glfw.poll_events();
+    }
+}
+
+fn handle_key(game: &RefCell<Game>, window: &mut Window, key: Key, action: Action) {
+    if key == Key::Escape && action == Action::Press {
+        return window.set_should_close(true);
+    }
+
+    let key = key as usize;
+    if key <= 1024 {
+        if action == Action::Press {
+            game.borrow_mut().set_bool(key, true);
+        } else if action == Action::Release {
+            game.borrow_mut().set_bool(key, false);
+        }
     }
 }
