@@ -1,11 +1,12 @@
 use std::{
-    cell::{Ref, RefCell},
     collections::{hash_map::Entry, HashMap},
     fs,
     path::Path,
 };
 
 use stb_image::image::{self, LoadResult};
+
+use crate::util::read_file;
 
 use super::{material::Material, texture2d::Texture2D};
 
@@ -31,8 +32,8 @@ impl Loader {
         match self.materials.entry(name) {
             Entry::Occupied(_) => panic!("Material already exists: {}", name),
             Entry::Vacant(entry) => {
-                let vertex_source = read_file(vertex_shader_file_path);
-                let fragment_source = read_file(fragment_shader_file_path);
+                let vertex_source = read_file(Path::new(vertex_shader_file_path));
+                let fragment_source = read_file(Path::new(fragment_shader_file_path));
 
                 let material = Material::new(&vertex_source, &fragment_source);
 
@@ -44,7 +45,7 @@ impl Loader {
     pub fn get_material(&self, name: &str) -> &Material {
         self.materials
             .get(name)
-            .expect(&format!("Material not found: {}", name))
+            .unwrap_or_else(|| panic!("Material not found: {}", name))
     }
 
     pub fn load_texture(&mut self, name: &'static str, image_file_path: &Path, alpha: bool) -> &Texture2D {
@@ -66,10 +67,8 @@ impl Loader {
     }
 
     pub fn get_texture(&self, name: &str) -> &Texture2D {
-        self.textures.get(name).expect(&format!("Texture not found: {}", name))
+        self.textures
+            .get(name)
+            .unwrap_or_else(|| panic!("Texture not found: {}", name))
     }
-}
-
-fn read_file(file_path: &str) -> String {
-    fs::read_to_string(file_path).expect(&format!("Failed to read file: {}", file_path))
 }

@@ -1,5 +1,5 @@
 use crate::opengl::{gen_textures, tex_image_2d, tex_parameter_i, Texture};
-use gl::types::{GLboolean, GLenum, GLint};
+use gl::types::GLenum;
 
 #[derive(Clone, Debug)]
 pub struct Texture2D {

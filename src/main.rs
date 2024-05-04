@@ -3,6 +3,7 @@ extern crate glfw;
 
 mod game;
 mod opengl;
+mod util;
 
 use std::{cell::RefCell, rc::Rc};
 
