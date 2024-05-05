@@ -4,7 +4,7 @@ use super::{sprite_renderer::SpriteRenderer, texture2d::Texture2D};
 
 #[derive(Debug)]
 pub struct Entity {
-    position: Vec2,
+    pub position: Vec2,
     size: Vec2,
     velocity: Vec2,
     color: Vec3A,

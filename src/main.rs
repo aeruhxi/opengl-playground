@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_if)]
+
 extern crate gl;
 extern crate glfw;
 
